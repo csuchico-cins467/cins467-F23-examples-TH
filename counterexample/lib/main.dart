@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   runApp(const MyApp());
@@ -55,17 +56,68 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+  late Future<int> _counter;
+  bool visibleIncrement = true;
+  final Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
 
-  void _incrementCounter() {
+  Future<void> _incrementCounter() async {
+    final SharedPreferences prefs = await _prefs;
+    int counter = (prefs.getInt('counter') ?? 0);
+    if (counter == 10) {
+      return;
+    }
+    counter++;
+    if (counter == 10) {
+      visibleIncrement = false;
+    }
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      _counter = prefs.setInt('counter', counter).then((bool success) {
+        if (success) {
+          return counter;
+        } else {
+          return -1;
+        }
+      });
     });
+  }
+
+  Future<void> _decrementCounter() async {
+    final SharedPreferences prefs = await _prefs;
+    int counter = (prefs.getInt('counter') ?? 0);
+    if (counter == 0) {
+      return;
+    }
+    counter--;
+    visibleIncrement = true;
+    setState(() {
+      _counter = prefs.setInt('counter', counter).then((bool success) {
+        if (success) {
+          return counter;
+        } else {
+          return -1;
+        }
+      });
+    });
+  }
+
+  Future<int> getCounter() async {
+    final prefs = await _prefs;
+    return prefs.getInt('counter') ?? 0;
+  }
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    _counter = getCounter();
+    // _counter = _prefs.then((prefs) {
+    //   // int? counter = prefs.getInt('counter');
+    //   // if (counter == null) {
+    //   //   return 0;
+    //   // }
+    //   // return counter;
+    //   return prefs.getInt('counter') ?? 0;
+    // });
   }
 
   @override
@@ -109,10 +161,37 @@ class _MyHomePageState extends State<MyHomePage> {
             const Text(
               'You have pushed the button this many times:',
             ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+            FutureBuilder<int>(
+              future: _counter,
+              builder: (BuildContext context, AsyncSnapshot<int> snapshot) {
+                if (snapshot.hasData) {
+                  return Text(
+                    '${snapshot.data}',
+                    style: Theme.of(context).textTheme.headlineMedium,
+                  );
+                } else if (snapshot.hasError) {
+                  return Text("Error: ${snapshot.error}");
+                } else {
+                  return CircularProgressIndicator();
+                }
+              },
             ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                  onPressed: _decrementCounter,
+                  child: IconButton(
+                      onPressed: _decrementCounter,
+                      tooltip: "Decrement counter by one",
+                      icon: const Icon(Icons.remove)),
+                ),
+                ElevatedButton(
+                  onPressed: visibleIncrement ? _incrementCounter : null,
+                  child: const Icon(Icons.add),
+                ),
+              ],
+            )
           ],
         ),
       ),
