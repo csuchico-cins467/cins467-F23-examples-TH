@@ -1,9 +1,9 @@
 import "package:flutter/foundation.dart";
 import 'package:sqflite/sqflite.dart';
 
-final String tableCount = 'CountTable';
-final String columnId = '_id';
-final String columnCount = 'count';
+const String tableCount = 'CountTable';
+const String columnId = '_id';
+const String columnCount = 'count';
 
 class CountObject {
   late int id;
