@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+// import 'dart:io';
 
 void main() {
   runApp(const MyApp());
@@ -56,7 +57,9 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   late var _myController;
+  bool buttonWorks = true;
   String displayString = "";
 
   @override
@@ -72,13 +75,40 @@ class _MyHomePageState extends State<MyHomePage> {
     _myController = TextEditingController();
   }
 
-  void _printText() {
-    if (kDebugMode) {
-      print("Texfield text: ${_myController.text}");
+  void _submit() async {
+    // var duration = const Duration(seconds: 2);
+    setState(() {
+      buttonWorks = !buttonWorks;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Processing Data')),
+    );
+    // sleep(duration);
+
+    if (_formKey.currentState!.validate()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Validated')),
+      );
+      if (kDebugMode) {
+        print("Texfield text: ${_myController.text}");
+      }
+      setState(() {
+        displayString = _myController.text;
+      });
     }
     setState(() {
-      displayString = _myController.text;
+      buttonWorks = !buttonWorks;
     });
+  }
+
+  String? _textValidator(String? value) {
+    if (value == null || value.isEmpty) {
+      return "Please enter some text";
+    }
+    if (value.contains("@")) {
+      return "Don't use the @ char.";
+    }
+    return null;
   }
 
   @override
@@ -100,25 +130,30 @@ class _MyHomePageState extends State<MyHomePage> {
         title: Text(widget.title),
       ),
       body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
+          // Center is a layout widget. It takes a single child and positions it
+          // in the middle of the parent.
+          child: Form(
+        key: _formKey,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            TextField(
+            TextFormField(
               controller: _myController,
+              validator: _textValidator,
               decoration: const InputDecoration(
                 border: OutlineInputBorder(),
                 labelText: 'Enter your username',
               ),
             ),
-            ElevatedButton(onPressed: _printText, child: const Text("Submit")),
+            ElevatedButton(
+                onPressed: buttonWorks ? _submit : null,
+                child: const Text("Submit")),
             Text(displayString),
           ],
         ),
-      ),
+      )),
       floatingActionButton: FloatingActionButton(
-        onPressed: _printText,
+        onPressed: buttonWorks ? _submit : null,
         tooltip: 'Print Text',
         child: const Icon(Icons.print),
       ), // This trailing comma makes auto-formatting nicer for build methods.
