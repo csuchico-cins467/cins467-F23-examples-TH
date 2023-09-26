@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 // import 'dart:io';
 import 'package:geolocator/geolocator.dart';
+import 'package:image_picker/image_picker.dart';
 
 void main() {
   runApp(const MyApp());
@@ -66,6 +68,8 @@ class _MyHomePageState extends State<MyHomePage> {
   String displayString = "";
   late Future<Position> _futurePosition;
   late Stream<Position> positionStream;
+  final ImagePicker picker = ImagePicker();
+  File? imageFile;
 
   /// Determine the current position of the device.
   ///
@@ -126,6 +130,15 @@ class _MyHomePageState extends State<MyHomePage> {
     );
     positionStream =
         Geolocator.getPositionStream(locationSettings: locationSettings);
+  }
+
+  void _getPhoto() async {
+    final XFile? photo = await picker.pickImage(source: ImageSource.camera);
+    if (photo != null) {
+      setState(() {
+        imageFile = File(photo.path);
+      });
+    }
   }
 
   void _submit() async {
@@ -202,6 +215,18 @@ class _MyHomePageState extends State<MyHomePage> {
                 onPressed: buttonWorks ? _submit : null,
                 child: const Text("Submit")),
             Text(displayString),
+            SizedBox(
+              height: 200,
+              width: 200,
+              child: imageFile != null
+                  ? Image.file(imageFile!)
+                  : Placeholder(
+                      fallbackHeight: 100,
+                      fallbackWidth: 100,
+                      child: Image.network(
+                        'https://cdn.pixabay.com/photo/2016/08/08/09/17/avatar-1577909_1280.png',
+                      )),
+            ),
             FutureBuilder<Position>(
               future: _futurePosition,
               builder: (context, snapshot) {
@@ -232,9 +257,9 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       )),
       floatingActionButton: FloatingActionButton(
-        onPressed: buttonWorks ? _submit : null,
-        tooltip: 'Print Text',
-        child: const Icon(Icons.print),
+        onPressed: _getPhoto,
+        tooltip: 'Get Photo',
+        child: const Icon(Icons.add_a_photo),
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
