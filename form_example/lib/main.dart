@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 // import 'dart:io';
@@ -63,6 +65,7 @@ class _MyHomePageState extends State<MyHomePage> {
   bool buttonWorks = true;
   String displayString = "";
   late Future<Position> _futurePosition;
+  late Stream<Position> positionStream;
 
   /// Determine the current position of the device.
   ///
@@ -117,6 +120,12 @@ class _MyHomePageState extends State<MyHomePage> {
     super.initState();
     _myController = TextEditingController();
     _futurePosition = _determinePosition();
+    const LocationSettings locationSettings = LocationSettings(
+      accuracy: LocationAccuracy.high,
+      distanceFilter: 100,
+    );
+    positionStream =
+        Geolocator.getPositionStream(locationSettings: locationSettings);
   }
 
   void _submit() async {
@@ -206,6 +215,19 @@ class _MyHomePageState extends State<MyHomePage> {
                 return const CircularProgressIndicator();
               },
             ),
+            StreamBuilder(
+                stream: positionStream,
+                builder:
+                    (BuildContext context, AsyncSnapshot<Position> snapshot) {
+                  if (snapshot.hasData) {
+                    return Text(
+                        'Lat: ${snapshot.data!.latitude}, Long: ${snapshot.data!.longitude}, Accuracy: ${snapshot.data!.accuracy}');
+                  } else if (snapshot.hasError) {
+                    return Text('${snapshot.error}');
+                  }
+
+                  return const CircularProgressIndicator();
+                }),
           ],
         ),
       )),
