@@ -1,26 +1,10 @@
-import 'dart:io';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:counterexample/android/android.dart';
 import 'package:counterexample/storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-void main() {
-  if (kIsWeb) {
-    runApp(const MyApp(title: "Web"));
-  }
-  if (Platform.isAndroid) {
-    runApp(const MyAndroidApp());
-  }
-  if (Platform.isIOS) {
-    runApp(const MyApp(title: "iOS"));
-  }
-}
-
-class MyApp extends StatelessWidget {
-  final String title;
-  const MyApp({super.key, required this.title});
+class MyAndroidApp extends StatelessWidget {
+  const MyAndroidApp({super.key});
 
   // This widget is the root of your application.
   @override
@@ -46,13 +30,13 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
-      home: MyHomePage(title: 'Flutter Demo $title'),
+      home: MyAndroidHomePage(title: 'Flutter Android Home Page'),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  MyHomePage({super.key, required this.title});
+class MyAndroidHomePage extends StatefulWidget {
+  MyAndroidHomePage({super.key, required this.title});
 
   // This widget is the home page of your application. It is stateful, meaning
   // that it has a State object (defined below) that contains fields that affect
@@ -67,12 +51,11 @@ class MyHomePage extends StatefulWidget {
   final CounterStorage storage = CounterStorage();
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<MyAndroidHomePage> createState() => _MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _MyHomePageState extends State<MyAndroidHomePage> {
   late Future<int> _counter;
-  late Future<Stream<DocumentSnapshot>> _stream;
 
   Future<void> _incrementCounter() async {
     int count = await widget.storage.readCounter();
@@ -96,11 +79,18 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
+  void getCounter() async {
+    if (!widget.storage.isInitialized) {
+      await widget.storage.initializeDefault();
+    }
+    setState(() {});
+  }
+
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
-    _stream = widget.storage.getStream();
+    getCounter();
   }
 
   @override
@@ -136,33 +126,30 @@ class _MyHomePageState extends State<MyHomePage> {
       const Text(
         'You have pushed the button this many times:',
       ),
-      FutureBuilder(
-          future: _stream,
-          builder: (BuildContext context,
-              AsyncSnapshot<Stream<DocumentSnapshot>> snapshot) {
-            if (snapshot.hasData) {
-              return StreamBuilder(
-                  stream: snapshot.data,
-                  builder: (BuildContext context,
-                      AsyncSnapshot<DocumentSnapshot> snapshot) {
-                    if (snapshot.hasError) {
-                      return Text("Error: ${snapshot.error}");
-                    } else {
-                      if (!snapshot.hasData) {
-                        return const CircularProgressIndicator();
-                      }
-                      if (kDebugMode) {
-                        print(snapshot.data);
-                      }
-                      return Text(
-                        snapshot.data!["count"].toString(),
-                        style: Theme.of(context).textTheme.headlineMedium,
-                      );
-                    }
-                  });
-            }
-            return const CircularProgressIndicator();
-          }),
+      widget.storage.isInitialized
+          ? StreamBuilder(
+              stream: FirebaseFirestore.instance
+                  .collection("example")
+                  .doc("counter")
+                  .snapshots(),
+              builder: (BuildContext context,
+                  AsyncSnapshot<DocumentSnapshot> snapshot) {
+                if (snapshot.hasError) {
+                  return Text("Error: ${snapshot.error}");
+                } else {
+                  if (!snapshot.hasData) {
+                    return const CircularProgressIndicator();
+                  }
+                  if (kDebugMode) {
+                    print(snapshot.data);
+                  }
+                  return Text(
+                    snapshot.data!["count"].toString(),
+                    style: Theme.of(context).textTheme.headlineMedium,
+                  );
+                }
+              })
+          : CircularProgressIndicator(),
       Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
