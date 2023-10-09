@@ -3,12 +3,24 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:form_example/login.dart';
 // import 'dart:io';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+
+GoogleSignIn _googleSignIn = GoogleSignIn(
+  scopes: [
+    'email',
+  ],
+);
 
 void main() {
-  runApp(const MyApp());
+  runApp(const MaterialApp(
+    title: 'Navigation Basics',
+    home: LoginPage(),
+  ));
 }
 
 class MyApp extends StatelessWidget {
