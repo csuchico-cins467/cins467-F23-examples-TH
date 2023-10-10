@@ -1,6 +1,9 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:form_example/photoform.dart';
+import 'package:form_example/pictures.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
@@ -49,7 +52,6 @@ class _LoginPageState extends State<LoginPage> {
       accessToken: googleAuth?.accessToken,
       idToken: googleAuth?.idToken,
     );
-
     // Once signed in, return the UserCredential
     _userCredential =
         await FirebaseAuth.instance.signInWithCredential(credential);
@@ -65,17 +67,53 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Login Page'),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: getBody(),
+    if (googleUser != null) {
+      return Scaffold(
+          appBar: AppBar(
+            title: const Text('Photos Page'),
+            actions: [
+              IconButton(
+                onPressed: logout,
+                icon: Icon(Icons.logout),
+              ),
+            ],
+          ),
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: getBody(),
+            ),
+          ),
+          floatingActionButton: FloatingActionButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const MyHomePage()),
+              );
+            },
+            child: const Icon(Icons.add_a_photo),
+          ));
+    } else {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Login Page'),
         ),
-      ),
-    );
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: getBody(),
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> logout() async {
+    FirebaseAuth.instance.signOut();
+    GoogleSignIn().signOut();
+    setState(() {
+      googleUser = null;
+    });
   }
 
   List<Widget> getBody() {
@@ -88,21 +126,27 @@ class _LoginPageState extends State<LoginPage> {
             // Navigate to second route when tapped.
           }));
     } else {
-      body.add(ListTile(
-        leading: GoogleUserCircleAvatar(identity: googleUser!),
-        title: Text(googleUser!.displayName ?? ""),
-        subtitle: Text(googleUser!.email ?? ""),
-      ));
-      body.add(Text(FirebaseAuth.instance.currentUser!.uid));
-      body.add(ElevatedButton(
-          child: const Text('Logout'),
-          onPressed: () {
-            FirebaseAuth.instance.signOut();
-            GoogleSignIn().signOut();
-            setState(() {
-              googleUser = null;
-            });
-          }));
+      body.add(StreamBuilder(
+          stream: FirebaseFirestore.instance.collection("photos").snapshots(),
+          builder: ((context, snapshot) {
+            if (snapshot.hasError) {
+              if (kDebugMode) {
+                print(snapshot.error.toString());
+              }
+              return Text(snapshot.error.toString());
+            }
+            if (!snapshot.hasData) {
+              return const Text("Loading Photos...");
+            }
+            return Expanded(
+                child: ListView.builder(
+              itemCount: snapshot.data!.docs.length,
+              itemBuilder: ((context, index) {
+                return Text(snapshot.data!.docs[index]["title"]);
+              }),
+              shrinkWrap: true,
+            ));
+          })));
     }
     return body;
   }
