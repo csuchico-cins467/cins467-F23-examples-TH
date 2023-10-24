@@ -1,0 +1,12 @@
+#Inspired by: https://medium.com/kinandcartacreated/setup-a-flutter-ci-cd-with-gitlab-ci-part-1-8d40b7a3b3dc
+
+image: fischerscode/flutter:latest
+
+stages:
+  - test
+
+flutter_test:
+  stage: test
+  script:
+    - cd counter_test
+    - flutter test
