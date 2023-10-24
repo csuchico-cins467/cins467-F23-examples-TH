@@ -4,9 +4,16 @@ image: fischerscode/flutter:latest
 
 stages:
   - test
+  - lint
 
 flutter_test:
   stage: test
   script:
     - cd counter_test
     - flutter test
+
+flutter_lint:
+  stage: lint
+  script:
+    - cd counter_test
+    - flutter analyze
