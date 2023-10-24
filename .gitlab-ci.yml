@@ -21,7 +21,7 @@ flutter_lint:
 
 flutter_build_android:
   stage: build
-  before_scripts:
+  before_script:
     - cd counter_test
     - flutter packages get
   script:
@@ -32,7 +32,7 @@ flutter_build_android:
 
 flutter_build_web:
   stage: build
-  before_scripts:
+  before_script:
     - cd counter_test
     - flutter packages get
   script:
